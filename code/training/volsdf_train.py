@@ -8,6 +8,7 @@ from tqdm import tqdm
 import utils.general as utils
 import utils.plots as plt
 from utils import rend_util
+from torch.utils.tensorboard import SummaryWriter
 
 class VolSDFTrainRunner():
     def __init__(self,**kwargs):
@@ -159,6 +160,7 @@ class VolSDFTrainRunner():
 
     def run(self):
         print("training...")
+        writer = SummaryWriter(log_dir="runs")
 
         for epoch in range(self.start_epoch, self.nepochs + 1):
 
@@ -193,7 +195,8 @@ class VolSDFTrainRunner():
                          self.plots_dir,
                          epoch,
                          self.img_res,
-                         **self.plot_conf
+                         writer,
+                         **self.plot_conf,
                          )
 
                 self.model.train()
@@ -222,6 +225,11 @@ class VolSDFTrainRunner():
                                 loss_output['rgb_loss'].item(),
                                 loss_output['eikonal_loss'].item(),
                                 psnr.item()))
+
+                writer.add_scalar("loss/total_loss", loss.item(), epoch * self.n_batches + data_index)
+                writer.add_scalar("loss/rgb_loss", loss_output['rgb_loss'].item(), epoch * self.n_batches + data_index)
+                writer.add_scalar("loss/eikonal_loss", loss_output['eikonal_loss'].item(), epoch * self.n_batches + data_index)
+                writer.add_scalar("loss/psnr", psnr.item(), epoch * self.n_batches + data_index)
 
                 self.train_dataset.change_sampling_idx(self.num_pixels)
                 self.scheduler.step()

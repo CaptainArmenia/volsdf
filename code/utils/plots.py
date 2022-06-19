@@ -11,26 +11,27 @@ from PIL import Image
 from utils import rend_util
 
 
-def plot(implicit_network, indices, plot_data, path, epoch, img_res, plot_nimgs, resolution, grid_boundary, level=0):
+def plot(implicit_network, indices, plot_data, path, epoch, img_res, writer, plot_nimgs, resolution, grid_boundary, level=0):
 
     if plot_data is not None:
         cam_loc, cam_dir = rend_util.get_camera_for_plot(plot_data['pose'])
 
-        plot_images(plot_data['rgb_eval'], plot_data['rgb_gt'], path, epoch, plot_nimgs, img_res)
+        plot_images(plot_data['rgb_eval'], plot_data['rgb_gt'], path, epoch, plot_nimgs, img_res, writer)
 
         # plot normal maps
-        plot_normal_maps(plot_data['normal_map'], path, epoch, plot_nimgs, img_res)
+        plot_normal_maps(plot_data['normal_map'], path, epoch, plot_nimgs, img_res, writer)
 
 
     data = []
 
     # plot surface
-    surface_traces = get_surface_trace(path=path,
-                                       epoch=epoch,
-                                       sdf=lambda x: implicit_network(x)[:, 0],
+    surface_traces = get_surface_trace(path,
+                                       epoch,
+                                       lambda x: implicit_network(x)[:, 0],
+                                       writer,
                                        resolution=resolution,
                                        grid_boundary=grid_boundary,
-                                       level=level
+                                       level=level,
                                        )
 
     if surface_traces is not None:
@@ -96,7 +97,7 @@ def get_3D_quiver_trace(points, directions, color='#bd1540', name=''):
     return trace
 
 
-def get_surface_trace(path, epoch, sdf, resolution=100, grid_boundary=[-2.0, 2.0], return_mesh=False, level=0):
+def get_surface_trace(path, epoch, sdf, writer, resolution=100, grid_boundary=[-2.0, 2.0], return_mesh=False, level=0):
     grid = get_grid_uniform(resolution, grid_boundary)
     points = grid['grid_points']
 
@@ -129,6 +130,7 @@ def get_surface_trace(path, epoch, sdf, resolution=100, grid_boundary=[-2.0, 2.0
 
         meshexport = trimesh.Trimesh(verts, faces, normals)
         meshexport.export('{0}/surface_{1}.ply'.format(path, epoch), 'ply')
+        writer.add_mesh("mesh", torch.unsqueeze(torch.Tensor(verts.copy()), dim=0), faces=torch.unsqueeze(torch.Tensor(faces.copy()), dim=0))
 
         if return_mesh:
             return meshexport
@@ -364,7 +366,7 @@ def get_grid(points, resolution, input_min=None, input_max=None, eps=0.1):
             "shortest_axis_index": shortest_axis}
 
 
-def plot_normal_maps(normal_maps, path, epoch, plot_nrow, img_res):
+def plot_normal_maps(normal_maps, path, epoch, plot_nrow, img_res, writer):
     normal_maps_plot = lin2img(normal_maps, img_res)
 
     tensor = torchvision.utils.make_grid(normal_maps_plot,
@@ -377,9 +379,10 @@ def plot_normal_maps(normal_maps, path, epoch, plot_nrow, img_res):
 
     img = Image.fromarray(tensor)
     img.save('{0}/normal_{1}.png'.format(path, epoch))
+    writer.add_image('images/normal_map', np.rollaxis(tensor, 2, 0))
 
 
-def plot_images(rgb_points, ground_true, path, epoch, plot_nrow, img_res):
+def plot_images(rgb_points, ground_true, path, epoch, plot_nrow, img_res, writer):
     ground_true = ground_true.cuda()
 
     output_vs_gt = torch.cat((rgb_points, ground_true), dim=0)
@@ -396,6 +399,9 @@ def plot_images(rgb_points, ground_true, path, epoch, plot_nrow, img_res):
 
     img = Image.fromarray(tensor)
     img.save('{0}/rendering_{1}.png'.format(path, epoch))
+    height = int(tensor.shape[0] / 2)
+    writer.add_image('images/render', np.rollaxis(tensor[:height, :, :], 2, 0))
+    writer.add_image('images/groundtruth', np.rollaxis(tensor[height:, :, :], 2, 0))
 
 
 def lin2img(tensor, img_res):
