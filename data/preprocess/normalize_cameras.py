@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 
 
-def get_center_point(num_cams,cameras):
+def get_center_point(num_cams,cameras, img_shape):
     A = np.zeros((3 * num_cams, 3 + num_cams))
     b = np.zeros((3 * num_cams, 1))
     camera_centers=np.zeros((3,num_cams))
@@ -16,7 +16,7 @@ def get_center_point(num_cams,cameras):
         c = c / c[3]
         camera_centers[:,i]=c[:3].flatten()
 
-        v = np.linalg.inv(K) @ np.array([800, 600, 1])
+        v = np.linalg.inv(K) @ np.array([int(img_shape[0] / 2), int(img_shape[1] / 2), 1]) #(width/2, height/2, 1)
         v = v / np.linalg.norm(v)
 
         v=R[2,:]
@@ -28,7 +28,7 @@ def get_center_point(num_cams,cameras):
 
     return soll,camera_centers
 
-def normalize_cameras(original_cameras_filename,output_cameras_filename,num_of_cameras):
+def normalize_cameras(original_cameras_filename,output_cameras_filename,num_of_cameras, image_shape):
     cameras = np.load(original_cameras_filename)
     if num_of_cameras==-1:
         all_files=cameras.files
@@ -36,7 +36,7 @@ def normalize_cameras(original_cameras_filename,output_cameras_filename,num_of_c
         for field in all_files:
             maximal_ind=np.maximum(maximal_ind,int(field.split('_')[-1]))
         num_of_cameras=maximal_ind+1
-    soll, camera_centers = get_center_point(num_of_cameras, cameras)
+    soll, camera_centers = get_center_point(num_of_cameras, cameras, image_shape)
 
     center = soll[:3].flatten()
 
@@ -63,10 +63,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Normalizing cameras')
     parser.add_argument('--input_cameras_file', type=str, default="cameras.npz",
                         help='the input cameras file')
+    parser.add_argument('--image_width', type=int)
+    parser.add_argument('--image_height', type=int)
     parser.add_argument('--output_cameras_file', type=str, default="cameras_normalize.npz",
                         help='the output cameras file')
     parser.add_argument('--number_of_cams',type=int, default=-1,
                         help='Number of cameras, if -1 use all')
 
     args = parser.parse_args()
-    normalize_cameras(args.input_cameras_file, args.output_cameras_file, args.number_of_cams)
+    normalize_cameras(args.input_cameras_file, args.output_cameras_file, args.number_of_cams, (args.image_width, args.image_height))

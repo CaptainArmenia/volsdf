@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            //"args": ["--input_cameras_file", "cameras_before_normalization.npz", "--output_cameras_file", "cameras.npz"],
+            "args": ["--colmap_dir", "/home/andy/Documents/Hierarchical-Localization/outputs/Khachkar/sfm_superpoint+superglue/"],
+            "cwd": "/home/andy/Documents/volsdf"
+        }
+    ]
+}
