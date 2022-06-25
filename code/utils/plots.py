@@ -407,3 +407,41 @@ def plot_images(rgb_points, ground_true, path, epoch, plot_nrow, img_res, writer
 def lin2img(tensor, img_res):
     batch_size, num_samples, channels = tensor.shape
     return tensor.permute(0, 2, 1).view(batch_size, channels, img_res[0], img_res[1])
+
+
+def get_vertex_colors(model, camera, mesh_points, batch_size = 2000):
+    vertices_colors = []
+    
+    uv, pose, intrinsics = camera
+    uv, pose, intrinsics = torch.unsqueeze(uv, dim=0).cuda(), torch.unsqueeze(pose, dim=0).cuda(), torch.unsqueeze(intrinsics, dim=0).cuda()
+    ray_dirs, cam_loc = rend_util.get_camera_params(uv, pose, intrinsics)
+    
+    cam_loc = cam_loc.unsqueeze(1).reshape(-1, 3)
+    ray_dirs = ray_dirs.reshape(-1, 3)
+    ray_dirs = torch.unsqueeze(ray_dirs[int(ray_dirs.shape[0] / 2)], dim=0)
+
+
+    for point in tqdm(torch.split(torch.Tensor(mesh_points), batch_size, dim=0)):
+        point = point.cuda()
+        batch_ray_dirs = ray_dirs.repeat(point.shape[0], 1)
+        z_vals, z_samples_eik = model.ray_sampler.get_z_vals(batch_ray_dirs, point, model)
+        z_vals, z_vals_bg = z_vals
+        z_max = z_vals[:,-1]
+        z_vals = z_vals[:,:-1]
+        N_samples = z_vals.shape[1]
+        points = point.unsqueeze(1) + z_vals.unsqueeze(2) * batch_ray_dirs.unsqueeze(1)
+        points_flat = points.reshape(-1, 3)
+
+        dirs = batch_ray_dirs.unsqueeze(1).repeat(1,N_samples,1)
+        dirs_flat = dirs.reshape(-1, 3)
+
+        with torch.enable_grad():
+            sdf_values, feature_vectors, normals = model.implicit_network.get_outputs(points_flat)
+            rgb_flat = model.rendering_network(points_flat, dirs_flat, normals, feature_vectors)
+            rgb_values = rgb_flat.reshape(-1, N_samples, 3)
+            
+            weights, bg_transmittance = model.volume_rendering(z_vals, z_max, sdf_values)
+
+            rgb_values = torch.sum(weights.unsqueeze(-1) * rgb_values, 1)
+            vertices_colors.append(rgb_values.detach().cpu())
+

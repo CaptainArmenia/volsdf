@@ -12,7 +12,7 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             //"args": ["--input_cameras_file", "cameras_before_normalization.npz", "--output_cameras_file", "cameras.npz"],
-            "args": ["--colmap_dir", "/home/andy/Documents/Hierarchical-Localization/outputs/Khachkar/sfm_superpoint+superglue/"],
+            "args": ["--colmap_project_dir", "/home/andy/Documents/Hierarchical-Localization/outputs/flores/sfm_superpoint+superglue/"],
             "cwd": "/home/andy/Documents/volsdf"
         }
     ]

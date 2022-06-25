@@ -80,7 +80,7 @@ class VolSDFTrainRunner():
         self.ds_len = len(self.train_dataset)
         print('Finish loading data. Data-set size: {0}'.format(self.ds_len))
         if scan_id < 24 and scan_id > 0: # BlendedMVS, running for 200k iterations
-            self.nepochs = int(200000 / self.ds_len)
+            #self.nepochs = int(200000 / self.ds_len)
             print('RUNNING FOR {0}'.format(self.nepochs))
 
         self.train_dataloader = torch.utils.data.DataLoader(self.train_dataset,
