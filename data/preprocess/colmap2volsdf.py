@@ -1,12 +1,12 @@
 import collections
 import argparse
 import os
+import pickle
 
 import numpy as np
 import cv2
 
 from normalize_cameras import get_center_point, normalize_cameras
-
 
 BaseImage = collections.namedtuple(
     "Image", ["id", "qvec", "tvec", "camera_id", "name", "xys", "point3D_ids"])
@@ -95,6 +95,7 @@ if __name__ == "__main__":
                         help='the output cameras file')
     parser.add_argument('--number_of_cams',type=int, default=-1,
                         help='Number of cameras, if -1 use all')
+    parser.add_argument('--no_normalization', action="store_true")
 
     args = parser.parse_args()
 
@@ -105,31 +106,40 @@ if __name__ == "__main__":
     image_width = cameras[1].width
     image_height = cameras[1].height
 
-    for ii in sorted(images.keys()):
-        cur_image=images[ii]
-        cur_camera_id = cur_image[3]
-        K = np.eye(3)
-        cur_camera = cameras[cur_camera_id]
+    image_data = {}
 
-        if not cur_camera.model in ["OPENCV", "PINHOLE"]:
-            raise Exception("Invalid camera model. Select PINHOLE or OPENCV camera model at colmap for reconstruction.")
+    for idx, ii in enumerate(sorted(images.keys())):
+        if idx % 4 == 0:
+            cur_image=images[ii]
+            cur_camera_id = cur_image[3]
+            K = np.eye(3)
+            cur_camera = cameras[cur_camera_id]
 
-        K[0, 0] = cur_camera.params[0]
-        K[1, 1] = cur_camera.params[1]
-        K[0, 2] = cur_camera.params[2]
-        K[1, 2] = cur_camera.params[3]
+            if not cur_camera.model in ["OPENCV", "PINHOLE"]:
+                raise Exception("Invalid camera model. Select PINHOLE or OPENCV camera model at colmap for reconstruction.")
 
-        M=np.zeros((3,4))
-        M[:,3]=cur_image.tvec
-        M[:3,:3]=qvec2rotmat(cur_image.qvec)
+            K[0, 0] = cur_camera.params[0]
+            K[1, 1] = cur_camera.params[1]
+            K[0, 2] = cur_camera.params[2]
+            K[1, 2] = cur_camera.params[3]
 
-        P=np.eye(4)
-        P[:3,:] = K@M
-        cameras_npz_format['world_mat_%d' % int(cur_image.name.split(".")[0])] = P
-        
-    np.savez(
-            "cameras_before_normalization.npz",
-            **cameras_npz_format)
-        
+            M=np.zeros((3,4))
+            M[:,3]=cur_image.tvec
+            M[:3,:3]=qvec2rotmat(cur_image.qvec)
+
+            P=np.eye(4)
+            P[:3,:] = K@M
+            cameras_npz_format['world_mat_%d' % cur_image.id] = P
+
+            image_data[cur_image.id] = {}
+            image_data[cur_image.id]["world_mat"] = P.astype(np.float32)
+            image_data[cur_image.id]["intrinsics"] = K.astype(np.float32)
+            image_data[cur_image.id]["image_file"] = cur_image.name
+            image_data[cur_image.id]["image_shape"] = (image_width, image_height)
+            image_data[cur_image.id]["scale_mat"] = np.eye(4).astype(np.float32)
+
+    np.savez("cameras_before_normalization.npz", **cameras_npz_format)
+    pickle.dump(image_data, open("cameras_before_normalization.pkl", "wb"))
     normalize_cameras("cameras_before_normalization.npz", args.output_cameras_file, args.number_of_cams, (image_width, image_height))
+
  

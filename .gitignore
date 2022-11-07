@@ -138,4 +138,10 @@ code/.idea/
 ._.DS_Store
 .idea/
 .vscode/*
-
+*.npz
+*.npy
+*.pkl
+*.jpg
+code/runs
+*.ply
+*.zip

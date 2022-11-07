@@ -6,6 +6,7 @@ import torch
 from skimage import measure
 import torchvision
 import trimesh
+from tqdm import tqdm
 from PIL import Image
 
 from utils import rend_util

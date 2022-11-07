@@ -10,6 +10,7 @@ import utils.plots as plt
 from utils import rend_util
 from torch.utils.tensorboard import SummaryWriter
 
+
 class VolSDFTrainRunner():
     def __init__(self,**kwargs):
         torch.set_default_dtype(torch.float32)
@@ -88,9 +89,9 @@ class VolSDFTrainRunner():
                                                             shuffle=True,
                                                             collate_fn=self.train_dataset.collate_fn
                                                             )
-        self.plot_dataloader = torch.utils.data.DataLoader(self.train_dataset,
+        self.plot_dataloader = torch.utils.data.DataLoader(torch.utils.data.Subset(self.train_dataset, [14]),
                                                            batch_size=self.conf.get_int('plot.plot_nimgs'),
-                                                           shuffle=True,
+                                                           shuffle=False,
                                                            collate_fn=self.train_dataset.collate_fn
                                                            )
 

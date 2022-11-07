@@ -1,14 +1,15 @@
 import cv2
 import numpy as np
 import argparse
+import pickle
 
 
 def get_center_point(num_cams,cameras, img_shape):
     A = np.zeros((3 * num_cams, 3 + num_cams))
     b = np.zeros((3 * num_cams, 1))
     camera_centers=np.zeros((3,num_cams))
-    for i in range(num_cams):
-        P0 = cameras['world_mat_%d' % i][:3, :]
+    for i, camera_file in enumerate(cameras.files):
+        P0 = cameras[camera_file][:3, :]
 
         K = cv2.decomposeProjectionMatrix(P0)[0]
         R = cv2.decomposeProjectionMatrix(P0)[1]
@@ -32,10 +33,11 @@ def normalize_cameras(original_cameras_filename,output_cameras_filename,num_of_c
     cameras = np.load(original_cameras_filename)
     if num_of_cameras==-1:
         all_files=cameras.files
-        maximal_ind=0
-        for field in all_files:
-            maximal_ind=np.maximum(maximal_ind,int(field.split('_')[-1]))
-        num_of_cameras=maximal_ind+1
+        # maximal_ind=0
+        # for field in all_files:
+        #     maximal_ind=np.maximum(maximal_ind,int(field.split('_')[-1]))
+        # num_of_cameras=maximal_ind+1
+        num_of_cameras = len(all_files)
     soll, camera_centers = get_center_point(num_of_cameras, cameras, image_shape)
 
     center = soll[:3].flatten()
@@ -53,10 +55,16 @@ def normalize_cameras(original_cameras_filename,output_cameras_filename,num_of_c
     normalization[2, 2] = max_radius / 3.0
 
     cameras_new = {}
-    for i in range(num_of_cameras):
-        cameras_new['scale_mat_%d' % i] = normalization
-        cameras_new['world_mat_%d' % i] = cameras['world_mat_%d' % i].copy()
+    image_data = pickle.load(open(original_cameras_filename.replace(".npz", ".pkl"), "rb"))
+
+    for file in cameras.files:
+        image_id = int(file.split("_")[-1])
+        cameras_new[file.replace("world", "scale")] = normalization
+        cameras_new[file] = cameras[file].copy()
+        image_data[image_id]["scale_mat"] = normalization.astype(np.float32)
+
     np.savez(output_cameras_filename, **cameras_new)
+    pickle.dump(image_data, open("cameras.pkl", "wb"))
 
 
 if __name__ == "__main__":
@@ -65,7 +73,7 @@ if __name__ == "__main__":
                         help='the input cameras file')
     parser.add_argument('--image_width', type=int)
     parser.add_argument('--image_height', type=int)
-    parser.add_argument('--output_cameras_file', type=str, default="cameras_normalize.npz",
+    parser.add_argument('--output_cameras_file', type=str, default="normalized_cameras.npz",
                         help='the output cameras file')
     parser.add_argument('--number_of_cams',type=int, default=-1,
                         help='Number of cameras, if -1 use all')

@@ -4,16 +4,61 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "Python: Current File",
+            "name": "Trajectory Visualizer",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "data/preprocess/trajectory_visualizer.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            //"args": ["--input_cameras_file", "cameras_before_normalization.npz", "--output_cameras_file", "cameras.npz"],
-            "args": ["--colmap_project_dir", "/home/andy/Documents/Hierarchical-Localization/outputs/flores/sfm_superpoint+superglue/"],
-            "cwd": "/home/andy/Documents/volsdf"
-        }
+           // "args": ["cameras_before_normalization.npz", "--ply", "mesh.ply"],
+            //"args": ["cameras.npz", "--ply", "mesh.ply"],
+            //"args": ["cameras.npz"],
+            "args": ["data/Jori/scan1/cameras.npz", "--ply", "evals/Jori_1/2300/scan1.ply"],
+            "cwd": "/home/beelzebub/Desktop/repos/volsdf/"
+        },
+        {
+            "name": "Preprocess colmap cameras",
+            "type": "python",
+            "request": "launch",
+            "program": "colmap2volsdf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--colmap_project_dir", "/home/beelzebub/Desktop/Datasets/test_volsdf_infinitam/hloc_outputs/sfm_superpoint+superglue"],
+            "cwd": "/home/beelzebub/Desktop/repos/volsdf/data/preprocess"
+        },
+        {
+            "name": "Train VolSDF",
+            "type": "python",
+            "request": "launch",
+            "program": "training/exp_runner.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            //"args": ["--conf", "./confs/jori.conf", "--scan_id", "1"],
+            "args": ["--conf", "./confs/infinitam.conf", "--scan_id", "1"],
+            "cwd": "/home/beelzebub/Desktop/repos/volsdf/code"
+        },
+        {
+            "name": "Preprocess infinitam poses",
+            "type": "python",
+            "request": "launch",
+            "program": "data/preprocess/infinitam2volsdf.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--poses", "~/Desktop/Datasets/test_volsdf_infinitam/poses.txt", "--infinitam_parameters", "~/Desktop/Datasets/test_volsdf_infinitam/InfiniTAM_calib.txt", "--no_normalization"],
+            //"cwd": "/home/andy/Documents/volsdf"
+        },
+        {
+            "name": "Export mesh",
+            "type": "python",
+            "request": "launch",
+            "program": "evaluation/eval.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--conf", "./confs/infinitam.conf", "--scan_id", "1", "--resolution", "300", "--checkpoint", "latest"],
+            "cwd": "/home/beelzebub/Desktop/repos/volsdf/code"
+        },
+
     ]
 }

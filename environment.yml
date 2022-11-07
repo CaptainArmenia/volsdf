@@ -23,7 +23,6 @@ dependencies:
   - charls=2.2.0=h2531618_0
   - cloudpickle=1.6.0=py_0
   - colorama=0.4.4=pyh9f0ad1d_0
-  - cudatoolkit=10.2.89=hfd86e86_1
   - cycler=0.11.0=pyhd3eb1b0_0
   - cytoolz=0.11.0=py39h27cfd23_0
   - dask-core=2.30.0=py_0
@@ -128,8 +127,6 @@ dependencies:
   - python=3.9.0=h2a148a8_4_cpython
   - python-dateutil=2.8.1=py_0
   - python_abi=3.9=2_cp39
-  - pytorch=1.10.0=py3.9_cuda10.2_cudnn7.6.5_0
-  - pytorch-mutex=1.0=cuda
   - pytz=2020.1=py_0
   - pywavelets=1.1.1=py39h6323ea4_4
   - pyyaml=6.0=py39h7f8727e_1
@@ -145,8 +142,6 @@ dependencies:
   - tifffile=2020.10.1=py_0
   - tk=8.6.11=h1ccaba5_0
   - toolz=0.11.1=py_0
-  - torchaudio=0.10.0=py39_cu102
-  - torchvision=0.11.1=py39_cu102
   - tqdm=4.62.3=pyhd8ed1ab_0
   - trimesh=3.9.36=pyh6c4a22f_0
   - typing_extensions=3.10.0.2=pyh06a4308_0
